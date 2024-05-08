@@ -21,7 +21,7 @@ const AddModal=(props)=>{
     return(
         <Modal show={props.show} onHide={props.handleClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Modal heading</Modal.Title>
+          <Modal.Title>Add User</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -64,7 +64,7 @@ const AddModal=(props)=>{
             Close
           </Button>
           <Button variant="primary" onClick={submit}>
-            Save
+            Submit
           </Button>
         </Modal.Footer>
       </Modal>

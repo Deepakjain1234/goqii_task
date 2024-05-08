@@ -3,89 +3,96 @@ import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import AddModal from "./Modals/AddModal";
 import EditModal from "./Modals/EditModal";
+import ConfirmModal from "./Modals/ConfirmModal";
+import { addUser ,deleteUser ,fatchAll ,editUser } from "../Services/User";
+import moment from 'moment';
+
 const UserTable=()=>{
 
     const [data, setData] = useState(null);
-    const [error, setError] = useState(null);
+    // const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [currentUser,setCurrentUser]=useState(null);
     const [show, setShow] = useState(false);
     const [addModalShow, setAddModalShow] = useState(false);
+    const [confirmModalShow, setConfirmModalShow] = useState(false);
+    const handleConfirmClose = () => setConfirmModalShow(false);
+    const handleConfirmShow = (data) => {
+    
+      setCurrentUser(data)
+      setConfirmModalShow(true)};
     const handleAddClose = () => setAddModalShow(false);
     const handleAddShow = () => setAddModalShow(true);
     const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
+    const handleShow = (data) => {
+      setCurrentUser(data)
+      setShow(true)
+    }
     
-
+  function convert(data){
+    const date=new Date(data)
+    console.log(date)
+    return moment(date).fromNow()
+  }
+  function convert1(item){
+    if(item.createdAt===item.updatedAt){
+      return "Not updated yet"
+    }
+    const date=new Date(item.updatedAt)
+    console.log(date)
+    return "Last upadate : " + moment(date).fromNow()
+  }
    
-    async function addNewUser(data){
-      console.log(data)
+    async function addNewUser(data){     
       handleAddClose()
       setLoading(true)
-      try {
-        const response = await fetch('https://goqii-task.onrender.com/api/user/createUser', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json', // Specify content type as JSON
-            // You can add more headers if required
-          },
-          body: JSON.stringify(data), // Convert data to JSON string
-        });
-        
-        fetchData()
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-    
-        const responseData = await response.json(); // Parse response JSON
-        console.log('Response:', responseData);
-        // Do something with the response data
-      } catch (error) {
-        console.error('Error:', error);
-        // Handle errors
+      await addUser(data);
+      fetchData()   
+    }
+    async function addEditUser(data){  
+      handleClose()   
+      setLoading(true)
+      await editUser(data);
+      fetchData()   
+    }
+
+    async function deleteuser(){
+      console.log(currentUser)
+      handleConfirmClose()
+      const body={
+        id:currentUser.id
       }
+      setLoading(true)
+      await deleteUser(body)
+      fetchData()
     }
     const fetchData = async () => {
-      try {
-        const response = await fetch('https://goqii-task.onrender.com/api/user/getall');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const jsonData = await response.json();
-        setData(jsonData);
-      } catch (error) {
-          console.log(error)
-        setError(error);
-      } finally {
-        setLoading(false);
-      }
+      const data =await fatchAll();
+      setData(data);
+      setLoading(false)
+     
     };
   
     useEffect(() => {
-      
-  
       fetchData();
-  
-      // Optionally, you can return a cleanup function from useEffect
-      // This will be called when the component unmounts or before the effect runs again
-      return () => {
-        // Cleanup code (if any)
-      };
-    }, [addModalShow]); // Empty dependency array means this effect will only run once, similar to componentDidMount
+    }, [addModalShow]); 
   
     if (loading) {
       return <div>Loading...</div>;
     }
   
-    if (error) {
-      return <div>Error: {error.message}</div>;
-    }
+    
     return(
       <>
-      <EditModal show={show} handleClose={handleClose} setEdit={setData} />
+      <EditModal show={show} handleClose={handleClose} setEdit={setData} addEditUser={addEditUser} currentUser={currentUser} />
       <AddModal show={addModalShow} handleClose={handleAddClose}  addNewUser={addNewUser} />
-     
+      <ConfirmModal show={confirmModalShow} handleClose={handleConfirmClose}  deleteUser={deleteuser} />
       <Button style={{marginBottom:20}} onClick={handleAddShow} variant="success">Add User</Button>
-      <Table striped bordered hover>
+      {
+        data.length===0 ?
+        <h4>No user found</h4>
+        : 
+        <Table striped bordered hover>
         <thead>
           <tr>
             <th>#</th>
@@ -99,22 +106,25 @@ const UserTable=()=>{
           </tr>
         </thead>
         <tbody>
-        {data.map((item) => (
+        { data.map((item,index) => (
             <tr key={item.id}>
-              <td>{item.id}</td>
+              <td>{index+1}</td>
               <td>{item.name}</td>
               <td>{item.email}</td>
               <td>{item.dob}</td>
-              <td>{item.createdAt}</td>
-              <td><Button onClick={handleShow} variant="success">Edit</Button></td>
-              <td><Button variant="danger">Delete</Button></td>
-              {/* Add more table cells if needed */}
+              <td> {convert(item.createdAt)}</td>
+              <td><div>
+              <Button onClick={()=>handleShow(item)} variant="success">Edit</Button>
+              <p style={{fontSize:10 , marginTop:3}}>{convert1(item)}</p></div></td>
+              <td><Button variant="danger" onClick={()=>handleConfirmShow(item)}>Delete</Button></td>
             </tr>
           ))}
 
         
         </tbody>
       </Table>
+      }
+     
       </>
         
 
